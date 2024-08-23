@@ -34,7 +34,6 @@ def capture_audio():
         audio = r.listen(source)
     try:
         text = r.recognize_google(audio, language="pt-BR").lower()
-        print(f"Você disse: {text}")
         return text
     except sr.UnknownValueError:
         print("Desculpe, não entendi o que você disse.")
@@ -73,8 +72,10 @@ def assistant():
         # Captura a entrada de áudio do usuário
         user_input = capture_audio()
         if user_input and ACTIVATION_WORD in user_input:
-            # Remove a palavra de ativação do input do usuário
-            user_request = user_input.replace(ACTIVATION_WORD, "").strip()
+            # Remove tudo antes da palavra de ativação e a própria palavra de ativação
+            activation_index = user_input.index(ACTIVATION_WORD)
+            user_request = user_input[activation_index + len(ACTIVATION_WORD):].strip()
+            print("Usuário: " + user_request)
 
             # Identifica a ferramenta a ser usada
             if "tela" in user_request:
@@ -82,7 +83,7 @@ def assistant():
                 screenshot_path = capture_screenshot()
                 # Envia a imagem para o Google Generative AI
                 screenshot_in_genai = genai.upload_file(screenshot_path)
-                prompt_parts = [screenshot_in_genai, "Observe a minha captura de tela e responda:" + user_input]
+                prompt_parts = [screenshot_in_genai, "Observe a minha captura de tela e responda de forma sucinta em pt-br ao seguinte prompt:" + user_request]
                 response = model.generate_content(prompt_parts, request_options={"timeout": 2000})
                 print("Helena: " + response.text)
                 speak(response.text)
